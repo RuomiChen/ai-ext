@@ -7,51 +7,26 @@
         </div>
       </template>
     </McHeader>
-    <McLayoutContent
-      v-if="startPage"
-      style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px"
-    >
-      <McIntroduction
-        :logoImg="'https://matechat.gitcode.com/logo2x.svg'"
-        :title="'MateChat'"
-        :subTitle="'Hi，欢迎使用 MateChat'"
-        :description="description"
-      ></McIntroduction>
-      <McPrompt
-        :list="introPrompt.list"
-        :direction="introPrompt.direction"
-        class="intro-prompt"
-        @itemClick="onSubmit($event.label)"
-      ></McPrompt>
+    <McLayoutContent v-if="startPage"
+      style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px">
+      <McIntroduction :logoImg="'https://matechat.gitcode.com/logo2x.svg'" :title="'MateChat'"
+        :subTitle="'Hi，欢迎使用 MateChat'" :description="description"></McIntroduction>
+      <McPrompt :list="introPrompt.list" :direction="introPrompt.direction" class="intro-prompt"
+        @itemClick="onSubmit($event.label)"></McPrompt>
     </McLayoutContent>
     <McLayoutContent class="content-container" v-else>
       <template v-for="(msg, idx) in messages" :key="idx">
-        <McBubble
-          v-if="msg.from === 'user'"
-          :content="msg.content"
-          :align="'right'"
-          :avatarConfig="{ imgSrc: 'https://matechat.gitcode.com/png/demo/userAvatar.svg' }"
-        >
+        <McBubble v-if="msg.from === 'user'" :content="msg.content" :align="'right'"
+          :avatarConfig="{ imgSrc: 'https://matechat.gitcode.com/png/demo/userAvatar.svg' }">
         </McBubble>
-        <McBubble v-else :content="msg.content" :avatarConfig="{ imgSrc: 'https://matechat.gitcode.com/logo.svg' }"> </McBubble>
+        <McBubble v-else :content="msg.content" :avatarConfig="{ imgSrc: 'https://matechat.gitcode.com/logo.svg' }">
+        </McBubble>
       </template>
     </McLayoutContent>
     <div class="shortcut" style="display: flex; align-items: center; gap: 8px">
-      <McPrompt
-        v-if="!startPage"
-        :list="simplePrompt"
-        :direction="'horizontal'"
-        style="flex: 1"
-        @itemClick="onSubmit($event.label)"
-      ></McPrompt>
-      <Button
-        style="margin-left: auto"
-        icon="add"
-        shape="circle"
-        title="新建对话"
-        size="md"
-        @click="newConversation"
-      />
+      <McPrompt v-if="!startPage" :list="simplePrompt" :direction="'horizontal'" style="flex: 1"
+        @itemClick="onSubmit($event.label)"></McPrompt>
+      <Button style="margin-left: auto" icon="add" shape="circle" title="新建对话" size="md" @click="newConversation" />
     </div>
     <McLayoutSender>
       <McInput :value="inputValue" :maxLength="2000" @change="(e) => (inputValue = e)" @submit="onSubmit">
@@ -66,7 +41,8 @@
               <span class="input-foot-maxlength">{{ inputValue.length }}/2000</span>
             </div>
             <div class="input-foot-right">
-              <Button icon="op-clearup" shape="round" :disabled="!inputValue" @click="inputValue = ''"><span class="demo-button-content">清空输入</span></Button>
+              <Button icon="op-clearup" shape="round" :disabled="!inputValue" @click="inputValue = ''"><span
+                  class="demo-button-content">清空输入</span></Button>
             </div>
           </div>
         </template>
@@ -76,9 +52,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import { Button } from 'vue-devui/button';
 import 'vue-devui/button/style.css';
+import { chat } from '../api/chat';
+import { httpGet } from '../utils/request';
 
 const description = [
   'MateChat 可以辅助研发人员编码、查询知识和相关作业信息、编写文档等。',
@@ -128,27 +106,41 @@ const inputFootIcons = [
 ];
 
 const messages = ref<any[]>([]);
+const init = async () => {
+  const res = await httpGet('/api/chat/init')
+  console.log(res);
+  startPage.value = false;
 
+  messages.value = [res]
+
+}
+onMounted(() => {
+  init()
+})
 const newConversation = () => {
   startPage.value = true;
   messages.value = [];
 }
 
-const onSubmit = (evt) => {
-  inputValue.value='';
+const onSubmit = async (evt) => {
+  const target = simplePrompt.find(item=>item.label==evt)
+  
+  inputValue.value = '';
   startPage.value = false;
   // 用户发送消息
   messages.value.push({
     from: 'user',
     content: evt,
   });
-  setTimeout(() => {
-    // 模型返回消息
-    messages.value.push({
-      from: 'model',
-      content: evt,
-    });
-  }, 200);
+  const res =  target? await chat({
+    value:target.value
+  }): await chat({
+    content: evt,
+  })
+  console.log('res',res);
+  
+  // 模型返回消息
+  messages.value.push(res);
 };
 </script>
 
@@ -208,7 +200,7 @@ const onSubmit = (evt) => {
       font-size: 14px;
     }
 
-    & > *:not(:first-child) {
+    &>*:not(:first-child) {
       margin-left: 8px;
     }
   }

@@ -25,6 +25,7 @@
   "dependencies": {
     "@devui-design/icons": "^1.4.0",
     "@matechat/core": "^1.6.0",
+    "axios": "^1.11.0",
     "vue": "^3.3.4",
     "vue-devui": "^1.6.33"
   },

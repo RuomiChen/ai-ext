@@ -1,4 +1,5 @@
 import axios, { type AxiosRequestConfig } from 'axios'
+import { IReponse } from '../types/request'
 
 // import { useAuthStore } from '../stores/auth'
 // import { useLoadingStore } from '../stores/loading'
@@ -35,17 +36,17 @@ instance.interceptors.response.use(
     // if ((response.config as AxiosRequestConfigEx).showLoading !== false) {
     //   loadingStore.end()
     // }
-    if(response.data.code!=200){
+    const res  = response.data as IReponse<any>
+    if(res.code!=200){
         throw new Error(response.data.msg)
     }
-    const res = response.data.data
     
 
     // if (res.status === 'failed' && !(response.config as AxiosRequestConfigEx).respondFailed) {
     //   throw new ApiResponseError(res.msg || '', res)
     // }
 
-    return res
+    return res.data
   },
   (error) => {
     // loadingStore.clear()
